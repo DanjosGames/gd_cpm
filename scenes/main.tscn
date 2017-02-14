@@ -5,11 +5,11 @@
 
 [sub_resource type="GDScript" id=1]
 
-script/source = "extends Spatial\n\n\n"
+script/source = "extends Spatial\n\nvar speed_calc_timer = 0\nvar prev_translation = Vector3()\nvar current_translation = Vector3()\n\nvar player\n\nfunc _ready():\n\tplayer = get_node(\"player\")\n\tset_process(true)\n\nfunc _process(delta):\n\tprev_translation = current_translation\n\tcurrent_translation = player.get_translation()\n\tvar ups = prev_translation.distance_to(current_translation)\n#\tups *= 60\n\tget_node(\"hud/speed\").set_text(str(ups))\n#\tprint(1/delta*delta)\n"
 
 [sub_resource type="BoxShape" id=2]
 
-extents = Vector3( 10, 0.1, 10 )
+extents = Vector3( 100, 0.1, 100 )
 
 [sub_resource type="FixedMaterial" id=3]
 
@@ -28,7 +28,7 @@ fixed_flags/use_color_array = false
 fixed_flags/use_point_size = false
 fixed_flags/discard_alpha = false
 fixed_flags/use_xy_normalmap = false
-params/diffuse = Color( 1, 1, 1, 1 )
+params/diffuse = Color( 0.996094, 0, 0, 1 )
 params/specular = Color( 0, 0, 0, 1 )
 params/emission = Color( 0, 0, 0, 1 )
 params/specular_exp = 40
@@ -87,7 +87,6 @@ shadow/zoffset_scale = 2.0
 
 [node name="StaticBody" type="StaticBody" parent="."]
 
-editor/display_folded = true
 _import_transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 )
 input/ray_pickable = true
 input/capture_on_drag = false
@@ -105,7 +104,7 @@ constant_angular_velocity = Vector3( 0, 0, 0 )
 [node name="TestCube" type="TestCube" parent="StaticBody"]
 
 _import_transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 )
-transform/local = Transform( 10, 0, 0, 0, 0.1, 0, 0, 0, 10, 0, 0, 0 )
+transform/local = Transform( 100, 0, 0, 0, 0.1, 0, 0, 0, 100, 0, 0, 0 )
 layers = 1
 geometry/visible = true
 geometry/material_override = SubResource( 3 )
@@ -128,60 +127,16 @@ shape = SubResource( 2 )
 trigger = false
 _update_shape_index = 0
 
-[node name="StaticBody1" type="StaticBody" parent="."]
-
-editor/display_folded = true
-_import_transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 )
-transform/local = Transform( 1, 0, 0, 0, 0.981884, 0.18948, 0, -0.18948, 0.981884, 0, -1.84973, -19.6966 )
-input/ray_pickable = true
-input/capture_on_drag = false
-shape_count = 1
-shapes/0/shape = SubResource( 2 )
-shapes/0/transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 )
-shapes/0/trigger = false
-collision/layers = 1
-collision/mask = 1
-friction = 1.0
-bounce = 0.0
-constant_linear_velocity = Vector3( 0, 0, 0 )
-constant_angular_velocity = Vector3( 0, 0, 0 )
-
-[node name="TestCube" type="TestCube" parent="StaticBody1"]
-
-_import_transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 )
-transform/local = Transform( 10, 0, 0, 0, 0.1, 0, 0, 0, 10, 0, 0, 0 )
-layers = 1
-geometry/visible = true
-geometry/material_override = SubResource( 3 )
-geometry/cast_shadow = 1
-geometry/receive_shadows = true
-geometry/range_begin = 0.0
-geometry/range_end = 0.0
-geometry/extra_cull_margin = 0.0
-geometry/billboard = false
-geometry/billboard_y = false
-geometry/depth_scale = false
-geometry/visible_in_all_rooms = false
-geometry/use_baked_light = false
-geometry/baked_light_tex_id = 0
-
-[node name="CollisionShape" type="CollisionShape" parent="StaticBody1"]
-
-_import_transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 )
-shape = SubResource( 2 )
-trigger = false
-_update_shape_index = 0
-
 [node name="hud" type="CanvasLayer" parent="."]
 
-editor/display_folded = true
 layer = 1
 offset = Vector2( 0, 0 )
 rotation = 0.0
 scale = Vector2( 1, 1 )
 
-[node name="debug" type="Control" parent="hud"]
+[node name="debug_cam" type="Control" parent="hud"]
 
+editor/display_folded = true
 rect/min_size = Vector2( 200, 200 )
 focus/ignore_mouse = false
 focus/stop_mouse = true
@@ -189,10 +144,10 @@ size_flags/horizontal = 2
 size_flags/vertical = 2
 margin/left = 0.0
 margin/top = 0.0
-margin/right = 40.0
-margin/bottom = 40.0
+margin/right = 200.0
+margin/bottom = 200.0
 
-[node name="Viewport" type="Viewport" parent="hud/debug"]
+[node name="Viewport" type="Viewport" parent="hud/debug_cam"]
 
 rect = Rect2( 0, 0, 200, 200 )
 own_world = false
@@ -209,7 +164,7 @@ audio_listener/enable_3d = false
 physics/object_picking = false
 gui/disable_input = false
 
-[node name="Camera" type="Camera" parent="hud/debug/Viewport"]
+[node name="Camera" type="Camera" parent="hud/debug_cam/Viewport"]
 
 _import_transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 )
 transform/local = Transform( 0.867114, -0.302755, 0.39554, 0, 0.794083, 0.607809, -0.498109, -0.52704, 0.688561, 13.022, 12.5764, 14.5679 )
@@ -230,6 +185,20 @@ visibility/opacity = 0.45
 transform/pos = Vector2( 480, 268 )
 texture = ExtResource( 1 )
 centered = false
+
+[node name="speed" type="Label" parent="hud"]
+
+focus/ignore_mouse = true
+focus/stop_mouse = true
+size_flags/horizontal = 2
+size_flags/vertical = 0
+margin/left = 489.0
+margin/top = 236.0
+margin/right = 529.0
+margin/bottom = 250.0
+percent_visible = 1.0
+lines_skipped = 0
+max_lines_visible = -1
 
 [node name="StaticBody 2" type="StaticBody" parent="."]
 
@@ -449,3 +418,4 @@ _update_shape_index = 0
 [node name="player" parent="." instance=ExtResource( 2 )]
 
 
+[editable path="player"]
