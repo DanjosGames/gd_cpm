@@ -28,7 +28,7 @@ var airDecceleration = 2.0         # Deacceleration experienced when ooposite st
 var airControl = 0.3               # How precise air control is
 var sideStrafeAcceleration = 50.0  # How fast acceleration occurs to get up to sideStrafeSpeed when
 var sideStrafeSpeed = 1.0          # What the max speed to generate when side strafing
-var jumpSpeed = 20   #was 10             # The speed at which the character's up axis gains when hitting jump
+var jumpSpeed = 5   #was 10             # The speed at which the character's up axis gains when hitting jump
 var moveScale = 1.0
 
 # Camera rotations
@@ -45,7 +45,10 @@ var wishJump = false
 # Used to display real time fricton values
 var playerFriction = 0.0
 
+var on_floor = false
+
 func _ready():
+	get_node("mid_ray").add_exception(self)
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	set_process_input(true)
 	set_fixed_process(true)
@@ -79,9 +82,13 @@ func _fixed_process(delta):
 		playerTopVelocity = playerVelocity.length()
 
 func isGrounded():
-	if get_node("mid_ray").is_colliding():
-		return true
-	return false
+	if not on_floor and get_node("mid_ray").is_colliding():
+		print("first contact")
+		on_floor = true
+	elif on_floor and not get_node("mid_ray").is_colliding():
+		print("lift off")
+		on_floor = false
+	return on_floor
 
 func set_movement_dir():
 	CMD.forwardMove = 0
@@ -176,8 +183,7 @@ func AirControl(wishdir, wishspeed, delta):
 	playerVelocity.y = 0
 	# Next two lines are equivalent to idTech's VectorNormalize()
 	speed = playerVelocity.length()
-	playerVelocity.normalized()
-
+	playerVelocity = playerVelocity.normalized()
 	dot = playerVelocity.dot(wishdir)
 	k = 32
 	k *= airControl * dot * dot * delta
@@ -188,13 +194,12 @@ func AirControl(wishdir, wishspeed, delta):
 		playerVelocity.y = playerVelocity.y * speed + wishdir.y * k
 		playerVelocity.z = playerVelocity.z * speed + wishdir.z * k
 
-		playerVelocity.normalized()
+		playerVelocity = playerVelocity.normalized()
 		moveDirectionNorm = playerVelocity
 
 	playerVelocity.x *= speed
 	playerVelocity.y = zspeed # Note this line
 	playerVelocity.z *= speed
-	printt("playerVelocity:", playerVelocity)
 
 #Applies friction to the player, called in both the air and on the ground
 func ApplyFriction(t, delta):
