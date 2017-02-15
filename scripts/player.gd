@@ -5,45 +5,45 @@ extends KinematicBody
 #########
 
 var CMD = {
-    "forwardMove" : 0,
-    "rightMove" : 0,
-    "upMove" : 0,
+    "forward_move" : 0,
+    "right_move" : 0,
+#    "up_move" : 0,
 }
 
-var playerView     # Camera
-var playerViewYOffset = 0.6 # The height at which the camera is bound to
-var xMouseSensitivity = 0.25
-var yMouseSensitivity = 0.25
+#var player_view     # Camera
+#var player_view_y_offset = 0.6 # The height at which the camera is bound to
+var x_mouse_sensitivity = 0.25
+var y_mouse_sensitivity = 0.25
 
 # Frame occuring factors
 var gravity = 10.0
 var friction = 6 #Ground friction
 
 # Movement stuff
-var moveSpeed = 7.0              # Ground move speed
-var runAcceleration = 14.0         # Ground accel
-var runDeacceleration = 10.0       # Deacceleration that occurs when running on the ground
-var airAcceleration = 2.0          # Air accel
-var airDecceleration = 2.0         # Deacceleration experienced when ooposite strafing
-var airControl = 0.3               # How precise air control is
-var sideStrafeAcceleration = 50.0  # How fast acceleration occurs to get up to sideStrafeSpeed when
-var sideStrafeSpeed = 1.0          # What the max speed to generate when side strafing
-var jumpSpeed = 5   #was 10             # The speed at which the character's up axis gains when hitting jump
-var moveScale = 1.0
+var move_speed = 7.0              # Ground move speed
+var run_acceleration = 14.0         # Ground accel
+var run_deacceleration = 10.0       # Deacceleration that occurs when running on the ground
+var air_acceleration = 2.0          # Air accel
+var air_decceleration = 2.0         # Deacceleration experienced when ooposite strafing
+var air_control = 0.3               # How precise air control is
+var side_strafe_acceleration = 50.0  # How fast acceleration occurs to get up to side_strafe_speed when
+var side_strafe_speed = 1.0          # What the max speed to generate when side strafing
+var jump_speed = 5   #was 10             # The speed at which the character's up axis gains when hitting jump
+#var move_scale = 1.0
 
 # Camera rotations
 var yaw = 0.0
 var pitch = 0.0
 
-var moveDirectionNorm = Vector3()
-var playerVelocity = Vector3()
-var playerTopVelocity = 0.0
+var move_direction_norm = Vector3()
+var player_velocity = Vector3()
+var player_top_velocity = 0.0
 
 # Q3: players can queue the next jump just before he hits the ground
-var wishJump = false
+var wish_jump = false
 
 # Used to display real time fricton values
-var playerFriction = 0.0
+var player_friction = 0.0
 
 var on_floor = false
 
@@ -55,33 +55,33 @@ func _ready():
 
 func _input(event):
 	if event.type == InputEvent.MOUSE_MOTION:
-		yaw = fmod(yaw - event.relative_x * xMouseSensitivity, 360)
-		pitch = max(min(pitch - event.relative_y * yMouseSensitivity, 85), -85)
+		yaw = fmod(yaw - event.relative_x * x_mouse_sensitivity, 360)
+		pitch = max(min(pitch - event.relative_y * y_mouse_sensitivity, 85), -85)
 		set_rotation(Vector3(0, deg2rad(yaw), 0))
 		get_node("Camera").set_rotation(Vector3(deg2rad(pitch), 0, 0))
 
 	if event.is_action_pressed("jump"):
-		wishJump = true
+		wish_jump = true
 	if event.is_action_released("jump"):
-		wishJump = false
+		wish_jump = false
 
 func _fixed_process(delta):
 	# Movement, here's the important part
 	set_movement_dir()
-	if isGrounded():
-		GroundMove(delta)
-	elif not isGrounded():
-		AirMove(delta)
+	if is_grounded():
+		ground_move(delta)
+	elif not is_grounded():
+		air_move(delta)
 
-	move(playerVelocity * delta)
+	move(player_velocity * delta)
 
 	# Calculate top velocity
-	var udp = playerVelocity
+	var udp = player_velocity
 	udp.y = 0.0
-	if playerVelocity.length() > playerTopVelocity:
-		playerTopVelocity = playerVelocity.length()
+	if player_velocity.length() > player_top_velocity:
+		player_top_velocity = player_velocity.length()
 
-func isGrounded():
+func is_grounded():
 	if not on_floor and get_node("mid_ray").is_colliding():
 		print("first contact")
 		on_floor = true
@@ -91,8 +91,8 @@ func isGrounded():
 	return on_floor
 
 func set_movement_dir():
-	CMD.forwardMove = 0
-	CMD.rightMove = 0
+	CMD.forward_move = 0
+	CMD.right_move = 0
 	var aim = get_global_transform().basis
 	var direction = Vector3()
 	if Input.is_action_pressed("move_forwards"):
@@ -103,73 +103,73 @@ func set_movement_dir():
 		direction -= aim[0]
 	if Input.is_action_pressed("move_right"):
 		direction += aim[0]
-	CMD.forwardMove = direction.z
-	CMD.rightMove = direction.x
+	CMD.forward_move = direction.z
+	CMD.right_move = direction.x
 
-func GroundMove(delta):
+func ground_move(delta):
 	var wishdir = Vector3()
 	var wishvel = Vector3()
 
 	# Do not apply friction if the player is queueing up the next jump
-	if not wishJump:
-	    ApplyFriction(1.0, delta)
+	if not wish_jump:
+	    apply_friction(1.0, delta)
 	else:
-	    ApplyFriction(0, delta)
+	    apply_friction(0, delta)
 
-	wishdir = Vector3(CMD.rightMove, 0, CMD.forwardMove)
+	wishdir = Vector3(CMD.right_move, 0, CMD.forward_move)
 	wishdir.normalized()
-	moveDirectionNorm = wishdir
+	move_direction_norm = wishdir
 
 	var wishspeed = wishdir.length()
-	wishspeed *= moveSpeed
+	wishspeed *= move_speed
 
-	Accelerate(wishdir, wishspeed, runAcceleration, delta)
+	accelerate(wishdir, wishspeed, run_acceleration, delta)
 
 	# Reset the gravity velocity
-	playerVelocity.y = 0
+	player_velocity.y = 0
 
-	if wishJump:
-		playerVelocity.y = jumpSpeed
-		wishJump = false
+	if wish_jump:
+		player_velocity.y = jump_speed
+		wish_jump = false
 
 # Execs when the player is in the air
-func AirMove(delta):
+func air_move(delta):
 	var wishdir
-	var wishvel = airAcceleration
+	var wishvel = air_acceleration
 	var accel
 
-	wishdir =  Vector3(CMD.rightMove, 0, CMD.forwardMove)
+	wishdir =  Vector3(CMD.right_move, 0, CMD.forward_move)
 	var wishspeed = wishdir.length()
-	wishspeed *= moveSpeed
+	wishspeed *= move_speed
 
 	wishdir.normalized()
-	moveDirectionNorm = wishdir
+	move_direction_norm = wishdir
 
-	# CPM: Aircontrol
+	# CPM: air_control
 	var wishspeed2 = wishspeed
-	if playerVelocity.dot(wishdir) < 0:
-		accel = airDecceleration
+	if player_velocity.dot(wishdir) < 0:
+		accel = air_decceleration
 	else:
-		accel = airAcceleration
+		accel = air_acceleration
 	# If the player is ONLY strafing left or right
-	if CMD.forwardMove == 0 and CMD.rightMove != 0:
-		if wishspeed > sideStrafeSpeed:
-			wishspeed = sideStrafeSpeed
-		accel = sideStrafeAcceleration
+	if CMD.forward_move == 0 and CMD.right_move != 0:
+		if wishspeed > side_strafe_speed:
+			wishspeed = side_strafe_speed
+		accel = side_strafe_acceleration
 
-	Accelerate(wishdir, wishspeed, accel, delta)
-	if airControl > 0:
-		AirControl(wishdir, wishspeed2, delta)
-	# !CPM: Aircontrol
+	accelerate(wishdir, wishspeed, accel, delta)
+	if air_control > 0:
+		air_control(wishdir, wishspeed2, delta)
+	# !CPM: air_control
 
 	# Apply gravity
-	playerVelocity.y -= gravity * delta
+	player_velocity.y -= gravity * delta
 
 
 # Air control occurs when the player is in the air, it allows
 # players to move side to side much faster rather than being
 # 'sluggish' when it comes to cornering.
-func AirControl(wishdir, wishspeed, delta):
+func air_control(wishdir, wishspeed, delta):
 	var zspeed
 	var speed
 	var dot
@@ -177,33 +177,33 @@ func AirControl(wishdir, wishspeed, delta):
 	var i
 
 	# Can't control movement if not moving forward or backward
-	if abs(CMD.forwardMove) < 0.001 or abs(wishspeed) < 0.001:
+	if abs(CMD.forward_move) < 0.001 or abs(wishspeed) < 0.001:
 		return
-	zspeed = playerVelocity.y
-	playerVelocity.y = 0
+	zspeed = player_velocity.y
+	player_velocity.y = 0
 	# Next two lines are equivalent to idTech's VectorNormalize()
-	speed = playerVelocity.length()
-	playerVelocity = playerVelocity.normalized()
-	dot = playerVelocity.dot(wishdir)
+	speed = player_velocity.length()
+	player_velocity = player_velocity.normalized()
+	dot = player_velocity.dot(wishdir)
 	k = 32
-	k *= airControl * dot * dot * delta
+	k *= air_control * dot * dot * delta
 
 	# Change direction while slowing down
 	if dot > 0:
-		playerVelocity.x = playerVelocity.x * speed + wishdir.x * k
-		playerVelocity.y = playerVelocity.y * speed + wishdir.y * k
-		playerVelocity.z = playerVelocity.z * speed + wishdir.z * k
+		player_velocity.x = player_velocity.x * speed + wishdir.x * k
+		player_velocity.y = player_velocity.y * speed + wishdir.y * k
+		player_velocity.z = player_velocity.z * speed + wishdir.z * k
 
-		playerVelocity = playerVelocity.normalized()
-		moveDirectionNorm = playerVelocity
+		player_velocity = player_velocity.normalized()
+		move_direction_norm = player_velocity
 
-	playerVelocity.x *= speed
-	playerVelocity.y = zspeed # Note this line
-	playerVelocity.z *= speed
+	player_velocity.x *= speed
+	player_velocity.y = zspeed # Note this line
+	player_velocity.z *= speed
 
 #Applies friction to the player, called in both the air and on the ground
-func ApplyFriction(t, delta):
-	var vec = playerVelocity # Equivalent to: VectorCopy()
+func apply_friction(t, delta):
+	var vec = player_velocity # Equivalent to: VectorCopy()
 	var vel
 	var speed
 	var newspeed
@@ -215,30 +215,30 @@ func ApplyFriction(t, delta):
 	drop = 0.0
 
 	# Only if the player is on the ground then apply friction
-	if isGrounded():
-		if speed < runDeacceleration:
-			control = runDeacceleration
+	if is_grounded():
+		if speed < run_deacceleration:
+			control = run_deacceleration
 		else:
 			control = speed
 		drop = control * friction * delta * t
 
 	newspeed = speed - drop
-	playerFriction = newspeed
+	player_friction = newspeed
 	if newspeed < 0:
 	    newspeed = 0
 	if speed > 0:
 	    newspeed /= speed
 
-	playerVelocity.x *= newspeed
-	playerVelocity.y *= newspeed
-	playerVelocity.z *= newspeed
+	player_velocity.x *= newspeed
+	player_velocity.y *= newspeed
+	player_velocity.z *= newspeed
 
-func Accelerate(wishdir, wishspeed, accel, delta):
+func accelerate(wishdir, wishspeed, accel, delta):
 	var addspeed
 	var accelspeed
 	var currentspeed
 
-	currentspeed = playerVelocity.dot(wishdir)
+	currentspeed = player_velocity.dot(wishdir)
 	addspeed = wishspeed - currentspeed
 	if addspeed <= 0:
 		return
@@ -246,5 +246,5 @@ func Accelerate(wishdir, wishspeed, accel, delta):
 	if accelspeed > addspeed:
 		accelspeed = addspeed
 
-	playerVelocity.x += accelspeed * wishdir.x
-	playerVelocity.z += accelspeed * wishdir.z
+	player_velocity.x += accelspeed * wishdir.x
+	player_velocity.z += accelspeed * wishdir.z
